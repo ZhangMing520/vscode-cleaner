@@ -1,9 +1,9 @@
 {
-  "name": "vscode-cleaner",
+  "name": "cache-sweeper",
   "displayName": "VS Code Cleaner",
-  "description": "清理 VS Code 自身不主动清理的空间：C/C++ IntelliSense 缓存（ipch）与更新残留的旧版扩展",
-  "version": "0.0.1",
-  "publisher": "vscode-cleaner",
+  "description": "Free the disk space VS Code never cleans up itself: C/C++ IntelliSense ipch cache, old extension versions, orphaned workspace storage, CachedData, leftover VSIXs, caches and logs. Everything goes to the Trash. 清理 VS Code 自身不主动清理的空间",
+  "version": "0.1.1",
+  "publisher": "zhangming520",
   "license": "MIT",
   "icon": "icon.png",
   "repository": {
@@ -14,15 +14,22 @@
     "vscode": "^1.85.0"
   },
   "categories": [
-    "Other",
-    "Utility"
+    "Other"
   ],
   "keywords": [
     "clean",
     "cleanup",
     "cache",
     "ipch",
-    "disk space"
+    "disk space",
+    "cache cleaner",
+    "free up space",
+    "unused extensions",
+    "old extensions",
+    "workspace storage",
+    "cachedata",
+    "logs",
+    "storage"
   ],
   "main": "./out/extension.js",
   "activationEvents": [],
