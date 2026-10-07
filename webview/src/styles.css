@@ -98,6 +98,14 @@ body {
   cursor: pointer;
 }
 
+/* 行首及分区表头原生勾选框：取色与顶部全选（Naive primaryColor）一致，随 VS Code 主题着色 */
+.row-check,
+.section-check {
+  accent-color: var(--vscode-button-background);
+  cursor: pointer;
+  margin: 0;
+}
+
 .status {
   margin-top: 12px;
   font-weight: 600;

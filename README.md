@@ -35,7 +35,7 @@ All deletions go to the system **Recycle Bin / Trash** (`useTrash: true`) and ca
    - Global select-all in the toolbar (when searching, it covers the matching rows); the checked count always reflects your selection, even with sections folded
    - Section collapsing (click a section title to fold/expand)
    - In-page language switch (English / 简体中文, top-right)
-   - Click anywhere on a row to toggle its selection (clicking the path cell copies the full path instead)
+   - Click anywhere on a row to toggle its selection (clicking the path cell copies the full path instead); **Shift+click selects the whole range** from the last clicked row, across sections
 3. Select the items to clean → **Delete selected** → confirm. Items are moved to the Recycle Bin and the freed space is reported.
 
 ## Settings
