@@ -37,14 +37,22 @@ npx @vscode/vsce package --no-dependencies   # 经 vscode:prepublish 自动执�
 
 ## 截图
 
-均为报告页在真实扫描下的画面（表格自身会截断长路径）。与英文 README 共用同一批图片文件。
+均为真实扫描画面；报告页跟随编辑器的主题与语言，所以部分截图为英文界面。
 
-![报告页：按大小排序的七个分区，顶栏汇总勾选情况](./docs/images/01-report-overview.png)
+![报告页：分区按大小排序，顶栏汇总当前勾选](./docs/images/06-report-zh.png)
 
 | | |
 |---|---|
-| ![搜索会筛出命中行并强制展开对应分区](./docs/images/02-report-search.png) | ![勾选状态与删除前的确认对话框](./docs/images/03-confirm-delete.png) |
-| ![ipch 分区：竞品没有覆盖的 IntelliSense 缓存](./docs/images/04-section-ipch.png) | ![移入回收站后显示的释放空间通知](./docs/images/05-deleted-notification.png) |
+| ![ipch 分区：竞品没有覆盖的 IntelliSense 缓存](./docs/images/04-section-ipch.png) | ![删除后右下角通知：清理了多少项、释放了多少空间](./docs/images/05-deleted-notification.png) |
+| ![搜索筛出命中行并强制展开对应分区](./docs/images/02-report-search.png) | ![勾选状态与删除前的确认对话框](./docs/images/03-confirm-delete.png) |
+
+界面取色来自 `--vscode-*` 变量，因此能适配任意主题：
+
+![浅色主题下的报告页](./docs/images/07-report-light.png)
+
+勾选 → 确认 → 释放，完整流程：
+
+![勾选并移入回收站的演示动图](./docs/images/demo.gif)
 
 
 ## 使用

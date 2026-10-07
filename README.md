@@ -37,14 +37,22 @@ Then install the `.vsix` via "Install from VSIX…" in VS Code.
 
 ## Screenshots
 
-Captured from the report page on a real scan; paths are shortened by the table itself.
+All captured from a real scan. The report follows your editor's theme and language, so a few shots are in 简体中文.
 
-![Report page: seven sections sorted by size, toolbar summarizing the selection](./docs/images/01-report-overview.png)
+![Report page: sections sorted by size, toolbar summarizing the current selection](./docs/images/01-report-overview.png)
 
 | | |
 |---|---|
-| ![Search filters rows and force-expands matching sections](./docs/images/02-report-search.png) | ![Selection plus the confirm dialog that gates every deletion](./docs/images/03-confirm-delete.png) |
-| ![ipch section, the cache competitors miss](./docs/images/04-section-ipch.png) | ![Freed-space notification after deleting to the Recycle Bin](./docs/images/05-deleted-notification.png) |
+| ![Search filters rows and force-expands the matching sections](./docs/images/02-report-search.png) | ![Selection plus the confirm dialog that gates every deletion](./docs/images/03-confirm-delete.png) |
+| ![The ipch section — the cache competitors miss](./docs/images/04-section-ipch.png) | ![Toast after deleting: how many items were cleaned and how much space was freed](./docs/images/05-deleted-notification.png) |
+
+The report takes its colors from `--vscode-*` variables, so it matches any theme:
+
+![The same report page in a light theme](./docs/images/07-report-light.png)
+
+Select → confirm → freed, end to end:
+
+![Animated demo of selecting items and moving them to the Recycle Bin](./docs/images/demo.gif)
 
 
 ## Usage
