@@ -79,7 +79,8 @@ export async function scanWorkspaceStorage(userDataRoot: string): Promise<ScanRe
 }
 
 /**
- * 扫描用户数据根下的 CachedData（扩展编译/语法 token 缓存）。
+ * 扫描用户数据根下的 CachedData（VS Code 自身的 V8/Electron 代码缓存，
+ * 非按扩展划分、无法对应到具体扩展）。
  * 全部可安全删除——VS Code 会在需要时自动重建；仅重建期间首次加载略慢。
  */
 export async function scanCachedData(userDataRoot: string): Promise<ScanResult> {

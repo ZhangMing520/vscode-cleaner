@@ -86,5 +86,5 @@ export function activate(context: vscode.ExtensionContext): void {
 }
 
 export function deactivate(): void {
-  // 暂无需要清理的资源
+  // 订阅均已加入 context.subscriptions，停用扩展时由 VS Code 自动清理，无需手动处置
 }
