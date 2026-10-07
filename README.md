@@ -32,6 +32,7 @@ All deletions go to the system **Recycle Bin / Trash** (`useTrash: true`) and ca
    - Column sorting (Name / Type / Size / Modified)
    - Draggable column widths
    - Keyword filtering (by name or path — matching rows are shown and their section auto-expanded; search never changes your selection)
+   - Global select-all in the toolbar (when searching, it covers the matching rows); the checked count always reflects your selection, even with sections folded
    - Section collapsing (click a section title to fold/expand)
    - In-page language switch (English / 简体中文, top-right)
    - Click anywhere on a row to toggle its selection (clicking the path cell copies the full path instead)

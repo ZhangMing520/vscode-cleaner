@@ -25,6 +25,12 @@ body {
   margin-bottom: 12px;
 }
 
+.toolbar .check-all {
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
 .toolbar .search {
   flex: 1;
 }

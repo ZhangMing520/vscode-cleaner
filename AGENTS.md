@@ -57,7 +57,8 @@ All deletions go to the system **Recycle Bin / Trash** (`vscode.workspace.fs.del
 
 ## Gotchas (from prior debugging)
 - `CachedData` dirs are 40-char hashes of V8 script paths — do NOT try to label them per-extension; it isn't possible.
-- Collapse state uses two fields: `userCollapsed` (user intent) and effective expand (forced open while the search query is non-empty, restored on clear). Search must **never** auto-check rows — only filter visibility; hidden rows keep their checked state but don't count toward deletion.
+- Collapse state uses two fields: `userCollapsed` (user intent) and effective expand (forced open while the search query is non-empty, restored on clear). Search must **never** auto-check rows — only filter visibility.
+- Selection semantics (2026-10-07 revision): the summary and delete action always cover **all checked non-deleted rows**, regardless of section collapse or search visibility. The old "hidden rows don't count" rule was dropped as counter-intuitive; the confirm dialog (with previewed labels + total) is the safety gate instead. The toolbar global select-all covers all rows (or search hits when a query is active); unchecking it clears the entire selection. The delete button is disabled when nothing is selected — there is no "no items selected" status message.
 - The host message handler posts back only **successfully** deleted indices (`deletedIndices`); the webview must not mark failed deletes as removed.
 - Old host behavior (pre-migration): deletion was dead because the inline script used an undefined `vscode` global — the Vue app calls `acquireVsCodeApi()` exactly once in `webview/src/vscode.ts`; there's a test guarding the host HTML against inline-script regressions.
 - vitest picks up the root `vite.config.ts` (whose `root` points at `webview/`); `vitest.config.ts` overrides the test root — keep both if you touch build config.
