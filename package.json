@@ -1,0 +1,46 @@
+{
+  "name": "vscode-cleaner",
+  "displayName": "VS Code Cleaner",
+  "description": "清理 VS Code 自身不主动清理的空间：C/C++ IntelliSense 缓存（ipch）与更新残留的旧版扩展",
+  "version": "0.0.1",
+  "publisher": "vscode-cleaner",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "commands": [
+      {
+        "command": "vscode-cleaner.scanAndClean",
+        "title": "%vscodeCleaner.scan.title%"
+      }
+    ],
+    "configuration": {
+      "title": "VS Code Cleaner",
+      "properties": {
+        "vscode-cleaner.minSizeMB": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "markdownDescription": "低于该可清理总量（MB）时仅提示、不打开详细报告；设为 0 表示始终打开报告。"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.1"
+  }
+}
