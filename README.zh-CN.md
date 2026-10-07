@@ -6,7 +6,7 @@ English documentation: [README.md](./README.md).
 
 ## 功能
 
-- **IntelliSense 缓存（ipch）**：`vscode-cpptools/ipch` 目录，通常最大，竞品未覆盖。可整体删除，C/C++ 扩展会在下次打开对应工作区时自动重建（首次略慢），不影响你的代码与设置。
+- **IntelliSense 缓存（ipch）**：`vscode-cpptools/ipch` 目录，通常最大，竞品未覆盖。可整体删除，C/C++ 扩展会在下次打开对应工作区时自动重建（首次略慢），不影响你的代码与设置。报告页会显示当前缓存大小，并给出 `C_Cpp.intelliSenseCacheSize`（限制上限）与 `C_Cpp.intelliSenseCachePath`（迁移到更大磁盘）的设置指引。
 - **旧版扩展**：`~/.vscode/extensions/` 下更新后残留的旧版本目录。仅标记**非激活**版本（读取默认 profile 与各命名 profile 的 `extensions.json` 判定活跃版本），当前正在使用的版本绝不会被删。
 - **孤儿工作区存储**：`User/workspaceStorage/<hash>` 中，原项目/`.code-workspace` 已消失的缓存。只删 VS Code 状态，**绝不删项目文件夹本身**。
 - **扩展代码缓存（CachedData）**：VS Code 自身的 V8/Electron 代码缓存，目录名为脚本路径的内部哈希，**不对应具体扩展**，可整体安全删除，下次启动自动重建。
@@ -21,10 +21,9 @@ English documentation: [README.md](./README.md).
 - 从 VS Code 扩展市场搜索 **VS Code Cleaner** 安装（发布后）；或本地打包安装：
   ```bash
   npm install
-  npm run compile
-  npm run webview:build   # 打包报告 webview 到 media/
-  npx @vscode/vsce package   # 生成 .vsix，在 VS Code 中「从 VSIX 安装」
+  npx @vscode/vsce package   # 经 vscode:prepublish 自动执行 compile + webview 打包，生成 .vsix
   ```
+  然后在 VS Code 中「从 VSIX 安装」即可。
 
 ## 使用
 

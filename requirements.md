@@ -142,8 +142,9 @@ VS Code 在以下两件事上**不会自动清理**，导致磁盘空间被长�
 ### 4.3 可选增强
 - **自动阈值模式（已实现）**：设置项 `vscode-cleaner.minSizeMB`（默认 0 = 始终打开报告）；
   可清理总量低于阈值时仅提示、不打开详细报告。
-- 设置项：`C_Cpp.intelliSenseCacheSize` 建议值提示；缓存路径迁移建议
-  （`C_Cpp.intelliSenseCachePath`）——**未实现**。
+- **C_Cpp 缓存治理提示（已实现）**：报告页 ipch 分区顶部展示提示条，动态注入当前缓存
+  总大小（{size} 占位符），并给出 `C_Cpp.intelliSenseCacheSize`（限制上限）与
+  `C_Cpp.intelliSenseCachePath`（迁移缓存到更大磁盘）两个设置项指引。
 
 ---
 

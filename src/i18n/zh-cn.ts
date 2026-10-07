@@ -3,7 +3,6 @@ export const zhCn: Record<string, string> = {
   'report.title': 'VS Code Cleaner',
   'report.subtitle': '在下方查看并选择要清理的项。所选项将被移至系统回收站，可恢复。',
   'report.searchPlaceholder': '按名称或路径筛选...',
-  'report.selectAll': '全选',
   'report.deleteSelected': '删除选中项',
   'report.confirmYes': '确认删除',
   'report.confirmNo': '取消',
@@ -14,7 +13,6 @@ export const zhCn: Record<string, string> = {
   'report.confirmNote': '这将把它们移至回收站。',
   'report.doneFreed': '已完成 — 释放',
   'report.andFailed': '项失败',
-  'report.deletedCell': '已删除',
   'report.itemsWord': '项',
   'report.confirmMore': '另有 {n} 项',
   'report.copyPathHint': '点击复制完整路径',
@@ -50,5 +48,5 @@ export const zhCn: Record<string, string> = {
   'ext.belowThreshold': 'VS Code Cleaner: 可清理空间仅 {size}，未达 {min} MB 阈值，已跳过详细报告。',
   'ext.cleaned': 'VS Code Cleaner: 已清理 {n} 项，释放 {size}',
   'ext.failed': 'VS Code Cleaner: 已删除 {n} 项，{m} 项失败',
-  'tip.ipch': '提示：可在设置中调整 C_Cpp.intelliSenseCacheSize 限制缓存上限，或用 C_Cpp.intelliSenseCachePath 将缓存迁移到更大容量的磁盘，从源头控制增长。',
+  'tip.ipch': '提示：当前缓存 {size}。可在设置中调整 C_Cpp.intelliSenseCacheSize 限制缓存上限，或用 C_Cpp.intelliSenseCachePath 将缓存迁移到更大容量的磁盘，从源头控制增长。',
 };

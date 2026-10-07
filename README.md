@@ -6,7 +6,7 @@ A VS Code extension that cleans up disk space VS Code does **not** clean on its 
 
 ## Features
 
-- **IntelliSense cache (ipch)**: the `vscode-cpptools/ipch` directory — usually the largest and not covered by competitors. Safe to delete as a whole; the C/C++ extension rebuilds it automatically the next time you open the workspace (first open may be slower). Your code and settings are unaffected.
+- **IntelliSense cache (ipch)**: the `vscode-cpptools/ipch` directory — usually the largest and not covered by competitors. Safe to delete as a whole; the C/C++ extension rebuilds it automatically the next time you open the workspace (first open may be slower). Your code and settings are unaffected. The report shows the current cache size with pointers to `C_Cpp.intelliSenseCacheSize` (cap the growth) and `C_Cpp.intelliSenseCachePath` (relocate to a bigger drive).
 - **Old extension versions**: leftover `<id>-<version>` folders under `~/.vscode/extensions` after updates. Only **inactive** versions are flagged (the active version is detected from the default profile and each named profile's `extensions.json`); the version currently in use is never removed.
 - **Orphaned workspace storage**: entries in `User/workspaceStorage/<hash>` whose original folder or `.code-workspace` file no longer exists on disk. Only VS Code's cached state is removed — **your actual project folders are never touched**.
 - **Code cache (CachedData)**: VS Code's own V8/Electron code cache. The directory names are internal hashes of script paths and **do not map to a specific extension**; the whole folder is safe to delete and is rebuilt on next launch.
@@ -21,10 +21,9 @@ All deletions go to the system **Recycle Bin / Trash** (`useTrash: true`) and ca
 - Install from the VS Code Marketplace by searching **VS Code Cleaner** (once published), or build and install locally:
   ```bash
   npm install
-  npm run compile
-  npm run webview:build   # bundles the report webview into media/
-  npx @vscode/vsce package   # produces a .vsix; install via "Install from VSIX" in VS Code
+  npx @vscode/vsce package   # runs compile + webview build via vscode:prepublish, produces a .vsix
   ```
+  Then install the `.vsix` via "Install from VSIX" in VS Code.
 
 ## Usage
 

@@ -19,7 +19,7 @@ All deletions go to the system **Recycle Bin / Trash** (`vscode.workspace.fs.del
 - Build webview bundle: `npm run webview:build` (Vite → `media/main.js` + `media/main.css`, fixed names, no hash). Watch: `npm run webview:watch`. Type-check: `npm run webview:typecheck` (vue-tsc).
 - Test in a fresh VS Code: `npm run webview:build` once, then press **F5** → **Extension Development Host**. Run the command palette command **`VS Code Cleaner: Scan and Clean`** (command id `vscode-cleaner.scanAndClean`).
 - Tests: `npm test` (vitest, `test/`). Host type-check: `npx tsc --noEmit -p ./`.
-- Package: `npx @vscode/vsce package --no-dependencies --allow-missing-repository --baseContentUrl <placeholder>` (see `.vscodeignore`; ships only `out/**` + `media/main.*`).
+- Package: `npx @vscode/vsce package --no-dependencies` (repository is set in package.json; see `.vscodeignore` — ships `out/**`, `media/main.*`, `icon.png`).
 
 ## Source layout
 - `paths.ts` — `resolveRoots()`: resolves the two platform-specific data roots (Extensions Root `~/.vscode/extensions` and User Data Root) and the ipch cache dir, using `os.homedir()` + env vars (`APPDATA`/`LOCALAPPDATA`/`XDG_CONFIG_HOME`/`XDG_CACHE_HOME`). Never hardcode absolute paths. At runtime `extension.ts` re-derives the **real** user data root from `context.globalStorageUri` so Insiders/`--user-data-dir` instances don't scan another instance's data.
@@ -29,12 +29,13 @@ All deletions go to the system **Recycle Bin / Trash** (`vscode.workspace.fs.del
 - `cleanup.ts` — `deleteItems()`: moves items to trash; returns `{ deleted, freedBytes, errors }`.
 - `report.ts` — **host side only**: creates the panel, computes `asWebviewUri` asset URIs (fixed names `media/main.js` / `media/main.css`), renders the HTML shell via `renderHtml()` (CSP + bootstrap data + asset tags), and handles `copy` / `delete` messages from the webview. No UI logic lives here anymore.
 - `webview/` — the report UI as a Vue 3 + Vite + Naive UI SPA bundled to `media/`:
-  - `webview/src/App.vue` — page layout, toolbar (search / summary / delete / language), section state (userCollapsed vs search-forced expand), selection semantics (only visible rows count), confirm modal, host message handling.
-  - `webview/src/SectionCard.vue` — one `n-data-table` per section: selection column, resizable columns (fixed pixel widths required), controlled sorter (default size desc), deleted-row rendering, click-to-copy path cell.
-  - `webview/src/theme.ts` — maps `--vscode-*` CSS vars onto Naive theme overrides; watches `body.vscode-dark/light/high-contrast` class mutations for live theme switching.
-  - `webview/src/i18n.ts` — reactive `locale` + `S()` / `Sopt()` (same fallback semantics as host `i18n/`).
+  - `webview/src/App.vue` — page layout, toolbar (search / summary / delete / language), section state (userCollapsed vs search-forced expand), selection semantics (only visible rows count; successfully deleted rows drop out of the data immediately), confirm modal, host message handling.
+  - `webview/src/SectionCard.vue` — one `n-data-table` per section: selection column, click-row-to-toggle selection (with selection-cell / path-cell exemptions against double-firing), resizable columns (fixed pixel widths required), controlled sorter (default size desc), click-to-copy path cell.
+  - `webview/src/theme.ts` — maps `--vscode-*` CSS vars onto Naive theme overrides; watches `body.vscode-dark/light/high-contrast` class mutations for live theme switching. The delete button uses Naive's built-in `type="error"` (driven by the single `common.errorColor` mapping) — do not re-add a custom error-button color helper.
+  - `webview/src/i18n.ts` — reactive `locale` + `S()` / `Sopt()` accepting optional `{name}` interpolation vars (same fallback + substitute semantics as host `i18n/`). Never hand-roll `.replace('{x}')` at a call site — pass vars.
   - `webview/src/bootstrap.ts` — reads `window.__CLEANER__` (`{ items, langs, locale }`) injected by the host's nonce'd inline script.
-  - `webview/src/format.ts` — `formatBytes` / `fmtDate` (same algorithm as host `src/format.ts`).
+  - `webview/src/rows.ts` — `RowVM` (item, idx, pre-lowercased lcLabel/lcPath), `rowMatches()` (single search predicate), `toRowVM()`.
+  - `webview/src/format.ts` — `fmtDate` (locale-aware modified-time formatting). `formatBytes` is imported directly from host `src/format.ts` — single implementation shared by host and webview.
 - `i18n/` — `en.ts` + `zh-cn.ts` bundles, `index.ts` (`t`/`tWith`/`getAllBundles`/`defaultLocale`). Add new UI strings to **both** bundles; the webview receives all bundles and switches language live.
 
 ## Conventions & constraints

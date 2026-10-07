@@ -3,7 +3,6 @@ export const en: Record<string, string> = {
   'report.title': 'VS Code Cleaner',
   'report.subtitle': 'Review items below and select what to remove. Selected items are moved to the system Recycle Bin / Trash and can be recovered.',
   'report.searchPlaceholder': 'Filter by name or path...',
-  'report.selectAll': 'Select all',
   'report.deleteSelected': 'Delete selected',
   'report.confirmYes': 'Confirm delete',
   'report.confirmNo': 'Cancel',
@@ -14,7 +13,6 @@ export const en: Record<string, string> = {
   'report.confirmNote': 'This moves them to the Recycle Bin / Trash.',
   'report.doneFreed': 'Done — freed',
   'report.andFailed': 'failed',
-  'report.deletedCell': 'deleted',
   'report.itemsWord': 'items',
   'report.confirmMore': '{n} more',
   'report.copyPathHint': 'Click to copy full path',
@@ -50,5 +48,5 @@ export const en: Record<string, string> = {
   'ext.belowThreshold': 'VS Code Cleaner: only {size} to clean — below the {min} MB threshold, so the detailed report is skipped.',
   'ext.cleaned': 'VS Code Cleaner: cleaned {n} items, freed {size}',
   'ext.failed': 'VS Code Cleaner: {n} deleted, {m} failed',
-  'tip.ipch': 'Tip: limit future growth at Settings › C_Cpp.intelliSenseCacheSize, or move the cache to a larger drive via C_Cpp.intelliSenseCachePath.',
+  'tip.ipch': 'Tip: currently {size}. Limit future growth via C_Cpp.intelliSenseCacheSize, or move the cache to a larger drive via C_Cpp.intelliSenseCachePath.',
 };

@@ -44,25 +44,27 @@ const confirmOpen = ref(false);
 const rowsBySection = computed<Record<SectionKey, RowVM[]>>(() => {
   const map = Object.fromEntries(SECTIONS.map((k) => [k, [] as RowVM[]])) as Record<SectionKey, RowVM[]>;
   props.items.forEach((item, idx) => {
-    map[item.kind as SectionKey]?.push(toRowVM(item, idx, deleted.value.has(idx)));
+    // 删除成功即从报告中移除该行（分区计数/总大小随之更新），不以划线形式残留
+    if (deleted.value.has(idx)) return;
+    map[item.kind as SectionKey]?.push(toRowVM(item, idx));
   });
   return map;
 });
 
 interface SectionView {
   key: SectionKey;
-  /** 命中搜索的本分区全部行（含已删除行，删除行以禁用态展示） */
+  /** 命中搜索的本分区行 */
   visible: RowVM[];
-  /** 可勾选（命中搜索且未删除）行的 idx 集合 */
+  /** 可勾选（命中搜索）行的 idx 集合 */
   selectableIdx: Set<number>;
-  /** 分区计数（未删除行数，不随搜索变化） */
+  /** 分区行数（不随搜索变化） */
   count: number;
-  /** 分区总大小（未删除行，不随搜索变化） */
+  /** 分区总大小（不随搜索变化），兼作排序键 */
   bytes: number;
 }
 
 /**
- * 每分区单次遍历统计（计数/总大小/搜索命中），并按总大小降序排出展示顺序（大分区优先）。
+ * 每分区单次遍历统计（总大小/搜索命中），并按总大小降序排出展示顺序（大分区优先）。
  * 零命中的分区整卡隐藏，避免成排的 "No Data" 空态。
  */
 const sectionsView = computed<SectionView[]>(() => {
@@ -70,22 +72,17 @@ const sectionsView = computed<SectionView[]>(() => {
     const rows = rowsBySection.value[key];
     const visible: RowVM[] = [];
     const selectableIdx = new Set<number>();
-    let count = 0;
     let bytes = 0;
-    let allBytes = 0;
     for (const r of rows) {
-      allBytes += r.item.sizeBytes;
-      const hit = rowMatches(r, q.value);
-      if (hit) visible.push(r);
-      if (!r.deleted) {
-        count += 1;
-        bytes += r.item.sizeBytes;
-        if (hit) selectableIdx.add(r.idx);
+      bytes += r.item.sizeBytes;
+      if (rowMatches(r, q.value)) {
+        visible.push(r);
+        selectableIdx.add(r.idx);
       }
     }
-    return { key, visible, selectableIdx, count, bytes, allBytes };
+    return { key, visible, selectableIdx, count: rows.length, bytes };
   });
-  list.sort((a, b) => b.allBytes - a.allBytes);
+  list.sort((a, b) => b.bytes - a.bytes);
   return list;
 });
 
@@ -97,13 +94,13 @@ function toggle(key: string): void {
   userCollapsed.value[key] = !userCollapsed.value[key];
 }
 
-/** 已勾选且当前有效的行：未删除、命中搜索、分区展开。折叠分区的勾选不计入删除。 */
+/** 已勾选且当前有效的行：命中搜索、分区展开。折叠分区的勾选不计入删除。 */
 const selected = computed<RowVM[]>(() => {
   const out: RowVM[] = [];
   for (const s of sectionsView.value) {
     if (!isExpanded(s.key)) continue;
     for (const r of s.visible) {
-      if (!r.deleted && checked.value.has(r.idx)) out.push(r);
+      if (checked.value.has(r.idx)) out.push(r);
     }
   }
   return out;
@@ -132,7 +129,7 @@ const confirmPreview = computed(() => {
   const labels = selected.value.slice(0, CONFIRM_PREVIEW).map((r) => r.item.label);
   let preview = labels.join(', ');
   if (selected.value.length > CONFIRM_PREVIEW) {
-    preview += ' (' + S('report.confirmMore').replace('{n}', String(selected.value.length - CONFIRM_PREVIEW)) + ')';
+    preview += ' (' + S('report.confirmMore', { n: selected.value.length - CONFIRM_PREVIEW }) + ')';
   }
   return preview;
 });
@@ -197,9 +194,8 @@ onUnmounted(() => window.removeEventListener('message', onHostMessage));
       <span class="summary">{{ summary }}</span>
       <n-button
         size="small"
+        type="error"
         :disabled="deleting"
-        :color="secondaryButton.bg"
-        :text-color="secondaryButton.fg"
         @click="onDeleteClick"
       >
         {{ S('report.deleteSelected') }}
@@ -216,7 +212,7 @@ onUnmounted(() => window.removeEventListener('message', onHostMessage));
 
     <SectionCard
       v-for="s in sectionsView"
-      v-show="!q || s.visible.length > 0"
+      v-show="s.visible.length > 0"
       :key="s.key"
       :sec-key="s.key"
       :rows="s.visible"

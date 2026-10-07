@@ -92,12 +92,6 @@ body {
   cursor: pointer;
 }
 
-/* 已删除行：划线弱化（与旧版行为一致，保留可见直至关闭面板） */
-tr.row-deleted td {
-  text-decoration: line-through;
-  opacity: 0.5;
-}
-
 .status {
   margin-top: 12px;
   font-weight: 600;

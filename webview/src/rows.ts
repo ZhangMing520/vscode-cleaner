@@ -7,7 +7,6 @@ import type { CleanupItem } from '../../src/types';
 export interface RowVM {
   item: CleanupItem;
   idx: number;
-  deleted: boolean;
   lcLabel: string;
   lcPath: string;
 }
@@ -17,11 +16,10 @@ export function rowMatches(r: RowVM, q: string): boolean {
   return !q || r.lcLabel.includes(q) || r.lcPath.includes(q);
 }
 
-export function toRowVM(item: CleanupItem, idx: number, deleted: boolean): RowVM {
+export function toRowVM(item: CleanupItem, idx: number): RowVM {
   return {
     item,
     idx,
-    deleted,
     lcLabel: item.label.toLowerCase(),
     lcPath: item.path.toLowerCase(),
   };

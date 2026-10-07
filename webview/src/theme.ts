@@ -72,7 +72,7 @@ export const themeOverrides = computed<GlobalThemeOverrides>(() => {
   };
 });
 
-/** 次要按钮（"删除所选"）配色，随主题切换。 */
+/** 次要按钮（语言切换）配色，随主题切换。 */
 export const secondaryButton = computed(() => ({
   bg: vvar('--vscode-button-secondaryBackground', isDark.value ? '#3a3d41' : '#e4e4e4'),
   fg: vvar('--vscode-button-secondaryForeground', isDark.value ? '#ffffff' : '#333333'),

@@ -4,11 +4,25 @@
   "description": "清理 VS Code 自身不主动清理的空间：C/C++ IntelliSense 缓存（ipch）与更新残留的旧版扩展",
   "version": "0.0.1",
   "publisher": "vscode-cleaner",
+  "license": "MIT",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ZhangMing520/vscode-cleaner.git"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Utility"
+  ],
+  "keywords": [
+    "clean",
+    "cleanup",
+    "cache",
+    "ipch",
+    "disk space"
   ],
   "main": "./out/extension.js",
   "activationEvents": [],

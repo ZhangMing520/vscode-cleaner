@@ -12,12 +12,21 @@ function lookup(key: string, fallback: string): string {
   return (b && b[key]) || LANGS.en[key] || fallback;
 }
 
-/** 必选文案：缺失时回退 key 本身。 */
-export function S(key: string): string {
-  return lookup(key, key);
+/** 替换 {name} 占位符（全局），与宿主 src/i18n substitute 语义一致。 */
+function substitute(s: string, vars?: Record<string, string | number>): string {
+  if (!vars) return s;
+  for (const [k, v] of Object.entries(vars)) {
+    s = s.replace(new RegExp('\\{' + k + '\\}', 'g'), String(v));
+  }
+  return s;
 }
 
-/** 可选文案（desc/tip）：缺失时返回空串而非泄漏 key。 */
-export function Sopt(key: string): string {
-  return lookup(key, '');
+/** 必选文案：缺失时回退 key 本身；支持 {name} 占位符。 */
+export function S(key: string, vars?: Record<string, string | number>): string {
+  return substitute(lookup(key, key), vars);
+}
+
+/** 可选文案（desc/tip）：缺失时返回空串而非泄漏 key；支持占位符。 */
+export function Sopt(key: string, vars?: Record<string, string | number>): string {
+  return substitute(lookup(key, ''), vars);
 }
