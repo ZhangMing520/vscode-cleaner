@@ -10,6 +10,9 @@ const SECTIONS: Array<{ key: string }> = [
   { key: 'extension' },
   { key: 'workspaceStorage' },
   { key: 'cachedData' },
+  { key: 'cachedVsixs' },
+  { key: 'codeCache' },
+  { key: 'logs' },
 ];
 
 /** 打开 Webview 报告页：分区表格 + 排序 + 搜索 + 语言切换 + 页内确认 + 回收站删除。 */
@@ -26,7 +29,18 @@ export function showReport(items: CleanupItem[]): void {
   const defLocale = defaultLocale();
   panel.webview.html = renderHtml(items, nonce, panel.webview.cspSource, langs, defLocale);
 
-  panel.webview.onDidReceiveMessage(async (msg: { command: string; indices?: number[]; locale?: string }) => {
+  panel.webview.onDidReceiveMessage(async (msg: { command: string; indices?: number[]; locale?: string; text?: string }) => {
+    if (msg.command === 'copy') {
+      const text = typeof msg.text === 'string' && items.some((it) => it.path === msg.text) ? msg.text : undefined;
+      if (!text) return;
+      try {
+        await vscode.env.clipboard.writeText(text);
+        vscode.window.showInformationMessage(tWith(msg.locale || defLocale, 'report.copiedPath'));
+      } catch {
+        // 剪贴板写入失败（如显示环境限制），静默返回而非未处理拒绝
+      }
+      return;
+    }
     if (msg.command !== 'delete' || !msg.indices || msg.indices.length === 0) {
       return;
     }
@@ -68,7 +82,7 @@ export function showReport(items: CleanupItem[]): void {
   });
 }
 
-function renderHtml(
+export function renderHtml(
   items: CleanupItem[],
   nonce: string,
   cspSource: string,
@@ -150,6 +164,7 @@ function renderHtml(
   <div id="status"></div>
 
 <script nonce="${nonce}">
+  const vscode = acquireVsCodeApi();
   const ITEMS = ${data};
   const LANGS = ${langsJson};
   const SECTIONS = ${sections};
@@ -158,6 +173,12 @@ function renderHtml(
   function S(key) {
     const b = LANGS[currentLocale] || LANGS.en;
     return (b && b[key]) || LANGS.en[key] || key;
+  }
+
+  // 可选字符串（desc/tip）：缺失时返回空串而非泄漏 key
+  function Sopt(key) {
+    const b = LANGS[currentLocale] || LANGS.en;
+    return (b && b[key]) || LANGS.en[key] || '';
   }
 
   function formatBytes(b) {
@@ -193,6 +214,7 @@ function renderHtml(
   const rows = [];
   const selAllByKey = {};
   const sections = [];
+  const CONFIRM_PREVIEW = 8;
 
   function isVisible(r) { return !r.sec.collapsed && r.tr.style.display !== 'none'; }
   function visibleRowsInSection(key) {
@@ -241,13 +263,18 @@ function renderHtml(
     confirmNo.textContent = S('report.confirmNo');
     sections.forEach(function (sec) {
       sec.titleText.textContent = S('section.' + sec.key);
-      sec.descEl.textContent = S('desc.' + sec.key) || '';
-      const tipText = S('tip.' + sec.key) || '';
+      sec.descEl.textContent = Sopt('desc.' + sec.key);
+      const tipText = Sopt('tip.' + sec.key);
       sec.tipEl.textContent = tipText;
       sec.tipEl.style.display = tipText ? '' : 'none';
-      sec.headers.forEach(function (h) { if (h.dataset.col) h.textContent = S('col.' + h.dataset.col); });
-      sec.rows.forEach(function (r) { r.typeCell.textContent = S('type.' + r.kind) || r.kind; });
-      sec.rows.forEach(function (r) { if (r.modCell) r.modCell.textContent = fmtDate(r.mtime); });
+      sec.headers.forEach(function (h) {
+        if (h.dataset.col) h.textContent = S('col.' + h.dataset.col);
+      });
+      sec.rows.forEach(function (r) {
+        r.typeCell.textContent = S('type.' + r.kind) || r.kind;
+        r.modCell.textContent = fmtDate(r.mtime);
+        r.pathCell.title = r.path + '\\n' + S('report.copyPathHint');
+      });
     });
     update();
   }
@@ -305,7 +332,10 @@ function renderHtml(
       const tr = document.createElement('tr');
       const cb = document.createElement('input'); cb.type = 'checkbox'; cb.className = 'rowcb';
       cb.checked = false; cb.dataset.index = idx;
-      cb.addEventListener('change', function () { syncSectionSelectAll(secKey); update(); });
+      cb.addEventListener('change', function () {
+        if (confirmBox.classList.contains('show')) confirmBox.classList.remove('show');
+        syncSectionSelectAll(secKey); update();
+      });
       const tdCb = document.createElement('td'); tdCb.appendChild(cb);
 
       const tdName = document.createElement('td'); tdName.textContent = it.label;
@@ -313,11 +343,15 @@ function renderHtml(
       const tdSize = document.createElement('td'); tdSize.textContent = formatBytes(it.sizeBytes);
       const tdMod = document.createElement('td'); tdMod.textContent = fmtDate(it.mtime);
       const tdPath = document.createElement('td'); tdPath.className = 'path';
-      tdPath.textContent = it.path; tdPath.title = it.path;
+      tdPath.textContent = it.path; // title 由 applyLocale 统一设置
+      tdPath.style.cursor = 'pointer';
+      tdPath.addEventListener('click', function () {
+        vscode.postMessage({ command: 'copy', text: it.path, locale: currentLocale });
+      });
 
       tr.appendChild(tdCb); tr.appendChild(tdName); tr.appendChild(tdType); tr.appendChild(tdSize); tr.appendChild(tdPath); tr.appendChild(tdMod);
       tbody.appendChild(tr);
-      const model = { tr: tr, cb: cb, sizeCell: tdSize, modCell: tdMod, typeCell: tdType, size: it.sizeBytes, mtime: it.mtime, kind: it.kind, label: it.label, path: it.path, idx: idx, sec: sec };
+      const model = { tr: tr, cb: cb, sizeCell: tdSize, modCell: tdMod, typeCell: tdType, pathCell: tdPath, size: it.sizeBytes, mtime: it.mtime, kind: it.kind, label: it.label, path: it.path, idx: idx, sec: sec };
       rows.push(model); sec.rows.push(model);
     });
 
@@ -335,6 +369,7 @@ function renderHtml(
     });
 
     selAll.addEventListener('change', function () {
+      if (confirmBox.classList.contains('show')) confirmBox.classList.remove('show');
       visibleRowsInSection(secKey).forEach(function (r) { r.cb.checked = selAll.checked; });
       update();
     });
@@ -362,7 +397,7 @@ function renderHtml(
       const path = r.path.toLowerCase();
       const hit = !q || name.indexOf(q) !== -1 || path.indexOf(q) !== -1;
       r.tr.style.display = hit ? '' : 'none';
-      r.cb.checked = hasQuery ? hit : false;
+      if (!hit) r.cb.checked = false;
     });
     // 搜索框非空时展开所有分区（无论逐字输入还是粘贴，最终态一致）；
     // 清空搜索时还原为用户原来的折叠状态
@@ -379,8 +414,12 @@ function renderHtml(
     const sel = selectedIndices();
     if (sel.length === 0) { status.textContent = S('report.noSelection'); return; }
     let total = 0; sel.forEach(function (i) { total += ITEMS[i].sizeBytes; });
+    let preview = sel.slice(0, CONFIRM_PREVIEW).map(function (i) { return ITEMS[i].label; }).join(', ');
+    if (sel.length > CONFIRM_PREVIEW) {
+      preview += ' (' + S('report.confirmMore').replace('{n}', sel.length - CONFIRM_PREVIEW) + ')';
+    }
     confirmText.textContent = S('report.confirmPrefix') + ' ' + sel.length + ' ' + S('report.confirmSuffix') +
-      ' (' + formatBytes(total) + ')? ' + S('report.confirmNote');
+      ' (' + formatBytes(total) + ')? ' + S('report.confirmNote') + ' [' + preview + ']';
     confirmBox.classList.add('show');
   });
 

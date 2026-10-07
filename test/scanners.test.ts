@@ -3,10 +3,10 @@ import * as os from 'os';
 import * as path from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { listSubdirs, calcDirSize } from '../src/fs';
+import { listSubdirs, calcDirSize, measureDir } from '../src/fs';
 import { scanIpchCache } from '../src/ipch';
 import { identifyOldExtensions } from '../src/extensions';
-import { scanWorkspaceStorage } from '../src/workspace';
+import { scanWorkspaceStorage, scanCachedExtensionVsixs, scanCodeCache, scanLogs } from '../src/workspace';
 
 // vscode 仅在扩展宿主可用；单测里 mock 出 Uri.parse 供 scanWorkspaceStorage 用
 vi.mock('vscode', () => ({
@@ -22,6 +22,9 @@ async function mkdirp(p: string): Promise<void> {
 }
 async function writeFile(p: string, content = 'x'): Promise<void> {
   await fs.writeFile(p, content);
+}
+async function setMtime(p: string, d: Date): Promise<void> {
+  await fs.utimes(p, d, d);
 }
 
 beforeEach(async () => {
@@ -146,6 +149,24 @@ describe('scanWorkspaceStorage', () => {
     const res = await scanWorkspaceStorage(userData);
     expect(res.items).toHaveLength(0);
   });
+
+  it('命名 profile 下的孤儿缓存与默认 profile 一并被扫描', async () => {
+    const userData = path.join(tmp, 'userdata');
+    const goneDefault = path.join(tmp, 'gone-default');
+    const goneProfile = path.join(tmp, 'gone-profile');
+
+    const hDefault = path.join(userData, 'User', 'workspaceStorage', 'hashD');
+    await mkdirp(hDefault);
+    await writeFile(path.join(hDefault, 'workspace.json'), JSON.stringify({ folder: 'file://' + goneDefault }));
+
+    const hProfile = path.join(userData, 'User', 'profiles', 'Work', 'workspaceStorage', 'hashP');
+    await mkdirp(hProfile);
+    await writeFile(path.join(hProfile, 'workspace.json'), JSON.stringify({ folder: 'file://' + goneProfile }));
+
+    const res = await scanWorkspaceStorage(userData);
+    expect(res.items).toHaveLength(2);
+    expect(res.items.map((i) => i.label).sort()).toEqual([goneDefault, goneProfile].sort());
+  });
 });
 
 describe('calcDirSize', () => {
@@ -155,5 +176,89 @@ describe('calcDirSize', () => {
     await writeFile(path.join(d, 'a'), '12345');
     await writeFile(path.join(d, 'sub', 'b'), '678');
     expect(await calcDirSize(d)).toBe(8);
+  });
+});
+
+describe('measureDir', () => {
+  it('单次遍历同时累加大小、取内部文件 mtime 最大值', async () => {
+    const d = path.join(tmp, 'sess');
+    await mkdirp(path.join(d, 'win'));
+    await writeFile(path.join(d, 'main.log'), 'abc');
+    await writeFile(path.join(d, 'win', 'exthost.log'), 'de');
+    const old = new Date(Date.UTC(2020, 0, 1));
+    const late = new Date(Date.UTC(2024, 5, 1));
+    await setMtime(d, old);
+    await setMtime(path.join(d, 'win'), old);
+    await setMtime(path.join(d, 'main.log'), old);
+    await setMtime(path.join(d, 'win', 'exthost.log'), late);
+    const m = await measureDir(d);
+    expect(m.sizeBytes).toBe(5);
+    expect(m.mtimeMs).toBe(late.getTime());
+  });
+
+  it('目录不存在返回 0/空而非抛错', async () => {
+    expect(await measureDir(path.join(tmp, 'nope'))).toEqual({ sizeBytes: 0, mtimeMs: 0 });
+  });
+});
+
+describe('scanCachedExtensionVsixs', () => {
+  it('跳过 . 前缀隐藏临时文件与 15 分钟内的新包', async () => {
+    const userData = path.join(tmp, 'userdata');
+    const root = path.join(userData, 'CachedExtensionVSIXs');
+    await mkdirp(root);
+    await writeFile(path.join(root, '.6554c1f8-b6df'), 'hidden');
+    await writeFile(path.join(root, 'ms-a.b-1.0.0.vsix'), 'oldpkg');
+    await writeFile(path.join(root, 'ms-c.d-2.0.0.vsix'), 'fresh');
+    const past = new Date(Date.UTC(2020, 0, 1));
+    await setMtime(path.join(root, 'ms-a.b-1.0.0.vsix'), past);
+    const res = await scanCachedExtensionVsixs(userData);
+    expect(res.items.map((i) => i.label)).toEqual(['ms-a.b-1.0.0.vsix']);
+    expect(res.items[0].sizeBytes).toBe(6);
+  });
+
+  it('目录不存在时为空', async () => {
+    expect(await scanCachedExtensionVsixs(path.join(tmp, 'none'))).toEqual({ items: [], totalBytes: 0 });
+  });
+});
+
+describe('scanCodeCache', () => {
+  it('逐条列出 Cache 的子目录与顶层文件', async () => {
+    const userData = path.join(tmp, 'userdata');
+    const cache = path.join(userData, 'Cache');
+    await mkdirp(path.join(cache, 'Cache_Data'));
+    await writeFile(path.join(cache, 'Cache_Data', 'f1'), 'abc');
+    await writeFile(path.join(cache, 'No_Vary_Search'), 'de');
+    const res = await scanCodeCache(userData);
+    expect(res.items.map((i) => i.label).sort()).toEqual(['Cache/Cache_Data', 'Cache/No_Vary_Search']);
+    expect(res.totalBytes).toBe(5);
+    expect(res.items.every((i) => i.kind === 'codeCache')).toBe(true);
+  });
+
+  it('目录不存在时为空', async () => {
+    expect(await scanCodeCache(path.join(tmp, 'none'))).toEqual({ items: [], totalBytes: 0 });
+  });
+});
+
+describe('scanLogs', () => {
+  it('跳过活动会话目录，mtime 取会话内最新文件时间', async () => {
+    const userData = path.join(tmp, 'userdata');
+    const logs = path.join(userData, 'logs');
+    const s1 = path.join(logs, '20200101T000000');
+    const s2 = path.join(logs, '20240101T000000');
+    await mkdirp(path.join(s1, 'win'));
+    await writeFile(path.join(s1, 'main.log'), 'x');
+    await writeFile(path.join(s1, 'win', 'a.log'), 'yy');
+    await mkdirp(s2);
+    await writeFile(path.join(s2, 'main.log'), 'z');
+    const old = new Date(Date.UTC(2020, 0, 1));
+    const late = new Date(Date.UTC(2024, 5, 1));
+    await setMtime(s1, old);
+    await setMtime(path.join(s1, 'win'), old);
+    await setMtime(path.join(s1, 'main.log'), old);
+    await setMtime(path.join(s1, 'win', 'a.log'), late);
+    const res = await scanLogs(userData, s2);
+    expect(res.items.map((i) => i.label)).toEqual(['20200101T000000']);
+    expect(res.items[0].sizeBytes).toBe(3);
+    expect(res.items[0].mtime).toBe(late.getTime());
   });
 });

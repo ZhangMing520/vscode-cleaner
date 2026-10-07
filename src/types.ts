@@ -1,4 +1,4 @@
-export type CleanupKind = 'ipch' | 'extension' | 'workspaceStorage' | 'cachedData';
+export type CleanupKind = 'ipch' | 'extension' | 'workspaceStorage' | 'cachedData' | 'cachedVsixs' | 'codeCache' | 'logs';
 
 export interface CleanupItem {
   /** 绝对路径 */
