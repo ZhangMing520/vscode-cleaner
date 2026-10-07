@@ -18,12 +18,34 @@ All deletions go to the system **Recycle Bin / Trash** (`useTrash: true`) and ca
 
 ## Install
 
-- Install from the VS Code Marketplace by searching **VS Code Cleaner** (once published), or build and install locally:
-  ```bash
-  npm install
-  npx @vscode/vsce package   # runs compile + webview build via vscode:prepublish, produces a .vsix
-  ```
-  Then install the `.vsix` via "Install from VSIX" in VS Code.
+Install **[VS Code Cleaner](https://marketplace.visualstudio.com/items?itemName=zhangming520.cache-sweeper)** from the VS Code Marketplace.
+
+The listing's identifier is `zhangming520.cache-sweeper`, which is not the same string as its display name — so if browsing doesn't find it, paste this into the Extensions view search box for an exact hit:
+
+```text
+@ext:zhangming520.cache-sweeper
+```
+
+To build and install locally instead:
+
+```bash
+npm install
+npx @vscode/vsce package --no-dependencies   # runs compile + webview build via vscode:prepublish, produces a .vsix
+```
+
+Then install the `.vsix` via "Install from VSIX…" in VS Code.
+
+## Screenshots
+
+Captured from the report page on a real scan; paths are shortened by the table itself.
+
+![Report page: seven sections sorted by size, toolbar summarizing the selection](./docs/images/01-report-overview.png)
+
+| | |
+|---|---|
+| ![Search filters rows and force-expands matching sections](./docs/images/02-report-search.png) | ![Selection plus the confirm dialog that gates every deletion](./docs/images/03-confirm-delete.png) |
+| ![ipch section, the cache competitors miss](./docs/images/04-section-ipch.png) | ![Freed-space notification after deleting to the Recycle Bin](./docs/images/05-deleted-notification.png) |
+
 
 ## Usage
 

@@ -18,12 +18,34 @@ English documentation: [README.md](./README.md).
 
 ## 安装
 
-- 从 VS Code 扩展市场搜索 **VS Code Cleaner** 安装（发布后）；或本地打包安装：
-  ```bash
-  npm install
-  npx @vscode/vsce package   # 经 vscode:prepublish 自动执行 compile + webview 打包，生成 .vsix
-  ```
-  然后在 VS Code 中「从 VSIX 安装」即可。
+从 VS Code 扩展市场安装 **[VS Code Cleaner](https://marketplace.visualstudio.com/items?itemName=zhangming520.cache-sweeper)**。
+
+条目标识是 `zhangming520.cache-sweeper`，与显示名不是同一个字符串——浏览找不到时，把下面这行原样粘进扩展视图的搜索框即可精确命中：
+
+```text
+@ext:zhangming520.cache-sweeper
+```
+
+或本地打包安装：
+
+```bash
+npm install
+npx @vscode/vsce package --no-dependencies   # 经 vscode:prepublish 自动执行 compile + webview 打包，生成 .vsix
+```
+
+然后在 VS Code 中「从 VSIX 安装」即可。
+
+## 截图
+
+均为报告页在真实扫描下的画面（表格自身会截断长路径）。与英文 README 共用同一批图片文件。
+
+![报告页：按大小排序的七个分区，顶栏汇总勾选情况](./docs/images/01-report-overview.png)
+
+| | |
+|---|---|
+| ![搜索会筛出命中行并强制展开对应分区](./docs/images/02-report-search.png) | ![勾选状态与删除前的确认对话框](./docs/images/03-confirm-delete.png) |
+| ![ipch 分区：竞品没有覆盖的 IntelliSense 缓存](./docs/images/04-section-ipch.png) | ![移入回收站后显示的释放空间通知](./docs/images/05-deleted-notification.png) |
+
 
 ## 使用
 

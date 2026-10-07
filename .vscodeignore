@@ -10,6 +10,7 @@ node_modules/**
 media/index.html
 requirements.md
 AGENTS.md
+docs/**
 tsconfig.json
 *.vsix
 .gitignore
