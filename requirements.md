@@ -35,13 +35,16 @@ VS Code 在以下两件事上**不会自动清理**，导致磁盘空间被长�
 
 | 目录 | 路径（Linux） | 占用 |
 |------|------|------|
-| C/C++ ipch 缓存 | `~/.cache/vscode-cpptools/ipch` | **4.2 GB** |
+| C/C++ ipch 缓存 | `~/.cache/vscode-cpptools/ipch` | **4.3 GB** |
 | 扩展根 | `~/.vscode/extensions` | 1.9 GB |
+| 扩展安装包缓存 | `~/.config/Code/CachedExtensionVSIXs` | 501 MB |
+| Chromium HTTP 缓存 | `~/.config/Code/Cache` | 322 MB |
 | 工作区存储 | `~/.config/Code/User/workspaceStorage` | 227 MB |
 | 扩展编译缓存 | `~/.config/Code/CachedData` | 81 MB |
+| 会话日志 | `~/.config/Code/logs` | 12 MB（只增不减，老机器上可达数百 MB） |
 
-体量顺序：`ipch ≫ 扩展 ≫ workspaceStorage > CachedData`。
-注：`CachedData` / `workspaceStorage` **不在** `~/.vscode/` 下（该路径不存在），实际位于用户数据根（见 4.2 节）。
+体量顺序：`ipch ≫ 扩展 ≈ CachedExtensionVSIXs ≈ Cache ≫ workspaceStorage > CachedData > logs`。
+注：`CachedData` / `workspaceStorage` / `CachedExtensionVSIXs` / `Cache` / `logs` **不在** `~/.vscode/` 下（该路径不存在），实际位于用户数据根（见 4.2 节）。
 
 ---
 
@@ -91,24 +94,32 @@ VS Code 在以下两件事上**不会自动清理**，导致磁盘空间被长�
 
 ## 4. 功能范围（MVP）
 
-### 4.1 必须支持
-- **命令面板命令**（如 `VS Code Cleaner: 扫描并清理`）。
-- **扫描并列出可清理项 + 占用大小**，至少包含：
+### 4.1 必须支持（已全部实现）
+- **命令面板命令**（`VS Code Cleaner: Scan and Clean`）。
+- **扫描并列出可清理项 + 占用大小**，共七类（按 kind 分组展示）：
   1. `vscode-cpptools/ipch` 目录（**核心卖点，通常最大**，竞品空白）。
-  2. `~/.vscode/extensions/` 下的**旧版扩展**（排除当前激活版本，与现有竞品同源）。
+  2. `~/.vscode/extensions/` 下的**旧版扩展**（排除当前激活版本与多 profile 在用版本）。
+  3. `User/workspaceStorage` **孤儿缓存**（原项目已消失；覆盖默认与命名 profile）。
+  4. `CachedData`（VS Code 自身的 V8/Electron 代码缓存）。
+  5. `CachedExtensionVSIXs`（扩展更新下载的 .vsix 安装包，逐条列出）。
+  6. `Cache`（Chromium HTTP 磁盘缓存，按子项列出）。
+  7. `logs`（历史会话日志目录，跳过当前活动会话）。
 - **预览 → 确认 → 删除 → 报告释放空间** 的两步交互，绝不静默删除。
+- 报告 webview 支持列宽拖拽、排序、搜索过滤、分区折叠、页内语言切换、点击路径复制。
 
-> 注：第 2 项与现有竞品功能重叠，仅为附带能力；第 1 项 ipch 才是核心卖点（见 §2.2）。
+> 注：第 2、3 项与现有竞品功能重叠，为附带能力；第 1 项 ipch 才是核心卖点（见 §2.2）。
 
-### 4.2 建议纳入（与 MVP 同源，优先级次之）
+### 4.2 建议纳入（已随 §4.1 一并实现）
 
-> 注意：以下两者均位于 VS Code 的**用户数据根（User Data Root）**，而非 `~/.vscode/` 下。
+> 注意：以下目标均位于 VS Code 的**用户数据根（User Data Root）**，而非 `~/.vscode/` 下。
 > - 扩展根（Extensions Root）：`~/.vscode/extensions/`（旧版扩展清理目标，见 4.1）。
 > - 用户数据根（User Data Root，含 `User/`、`CachedData`、`Cache` 等）：
 >   - Linux：`$XDG_CONFIG_HOME/Code/`（未定义时 `~/.config/Code/`）
 >   - Windows：`%APPDATA%\Code\`
 >   - macOS：`~/Library/Application Support/Code/`
 > - 该根目录可被 `--user-data-dir` 启动参数覆盖，实现时须按平台解析，不可硬编码。
+>   实现上另做了运行实例反推：从扩展自身的 `globalStorage` 路径向上定位真实用户数据根，
+>   保证在 Insiders / `--user-data-dir` 等派生实例下不误扫别的实例。
 
 - **`CachedData`**：位于用户数据根下（如 Linux `~/.config/Code/CachedData`、Windows `%APPDATA%\Code\CachedData`）。
   这是 VS Code **自身的 V8/Electron 代码缓存**（渲染进程、共享进程、扩展宿主等各一个条目，目录名为脚本路径的内部哈希），
@@ -117,12 +128,22 @@ VS Code 在以下两件事上**不会自动清理**，导致磁盘空间被长�
   Windows `%APPDATA%\Code\User\workspaceStorage`）。每个打开过的工作区生成一个哈希子目录，
   记录工作区级状态；原项目/`.code-workspace` 已删除的即孤儿缓存。仅删 VS Code 缓存状态，
   **绝不删项目文件夹本身**。
-- 其他扩展的同类缓存（如各自在 `~/.cache` 下的目录，可做可配置白名单）。
+- **`CachedExtensionVSIXs`**（2026-10-07 新增）：扩展更新时下载的 .vsix 安装包，安装完成后即无用，
+  VS Code 永不自动清理。逐条列出每个安装包；跳过 `.<uuid>` 下载临时文件与 15 分钟内的新包
+  （可能正在写入）。整体可安全删除，重装该扩展时重新下载。
+- **`Cache`**（2026-10-07 新增）：Chromium 的 HTTP 磁盘缓存（市场资源、图标、webview 网络资源等）。
+  按子项逐条列出——运行实例仍持有部分打开文件，整体删除是 all-or-nothing，拆开后被锁子项
+  单独失败、其余照常清理；trash 只是移动条目，空间真正释放需重启 VS Code 并清空回收站。
+- **`logs`**（2026-10-07 新增）：每次启动生成一个带时间戳的会话日志目录，只增不减、无限累积。
+  逐条列出历史会话目录（mtime 取目录内文件最新时间，目录自身 mtime 不随日志追加更新），
+  跳过当前运行实例自己的会话目录。
+- 其他扩展的同类缓存（如各自在 `~/.cache` 下的目录，可做可配置白名单）——**未实现，留作远期**。
 
 ### 4.3 可选增强
+- **自动阈值模式（已实现）**：设置项 `vscode-cleaner.minSizeMB`（默认 0 = 始终打开报告）；
+  可清理总量低于阈值时仅提示、不打开详细报告。
 - 设置项：`C_Cpp.intelliSenseCacheSize` 建议值提示；缓存路径迁移建议
-  （`C_Cpp.intelliSenseCachePath`）。
-- 自动阈值模式：扫描到超过 N GB 才提示。
+  （`C_Cpp.intelliSenseCachePath`）——**未实现**。
 
 ---
 

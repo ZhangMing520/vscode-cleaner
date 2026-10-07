@@ -19,6 +19,7 @@ export const zhCn: Record<string, string> = {
   'report.confirmMore': '另有 {n} 项',
   'report.copyPathHint': '点击复制完整路径',
   'report.copiedPath': '路径已复制到剪贴板',
+  'report.bundleMissing': '未找到 webview 前端产物，请先运行 <code>npm run webview:build</code>。',
   'col.name': '名称',
   'col.type': '类型',
   'col.size': '大小',

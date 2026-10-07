@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from 'vitest';
-import * as vm from 'vm';
 
 vi.mock('vscode', () => ({
   env: { language: 'en', clipboard: { writeText: vi.fn() } },
@@ -20,46 +19,51 @@ import { CleanupItem } from '../src/types';
 
 const ITEMS: CleanupItem[] = [
   { path: '/root/ipch/ABC', sizeBytes: 10, kind: 'ipch', label: 'ABC', mtime: 1700000000000 },
-  { path: '/root/extensions/ms-a.b-1.0.0', sizeBytes: 20, kind: 'extension', label: 'ms-a.b@1.0.0', mtime: 1700000000000 },
-  { path: '/root/User/workspaceStorage/hash1', sizeBytes: 30, kind: 'workspaceStorage', label: '/gone/proj', mtime: 1700000000000 },
-  { path: '/root/CachedData/abcd', sizeBytes: 40, kind: 'cachedData', label: 'abcd', mtime: 1700000000000 },
   { path: '/root/CachedExtensionVSIXs/ms-a.b-1.0.0.vsix', sizeBytes: 50, kind: 'cachedVsixs', label: 'ms-a.b-1.0.0.vsix', mtime: 1700000000000 },
-  { path: '/root/Cache/Cache_Data', sizeBytes: 60, kind: 'codeCache', label: 'Cache/Cache_Data', mtime: 1700000000000 },
   { path: '/root/logs/20200101T000000', sizeBytes: 70, kind: 'logs', label: '20200101T000000', mtime: 1700000000000 },
 ];
 
-function scriptOf(html: string): string {
+const CSP = 'vscode-webview://csp';
+const ASSETS = { scriptUri: 'vscode-webview://csp/media/main.js', styleUri: 'vscode-webview://csp/media/main.css' };
+
+const html = renderHtml(ITEMS, 'deadbeefcafe0000', CSP, getAllBundles(), defaultLocale(), ASSETS);
+
+function inlineScriptSrc(): string {
   const m = html.match(/<script nonce="[a-f0-9]+">([\s\S]*?)<\/script>/);
-  expect(m, 'embedded <script> not found').not.toBeNull();
+  expect(m, 'bootstrap inline <script> not found').not.toBeNull();
   return (m as RegExpMatchArray)[1];
 }
 
-const script = scriptOf(renderHtml(ITEMS, 'deadbeefcafe0000', 'vscode-webview://csp', getAllBundles(), defaultLocale()));
-
-describe('renderHtml 生成的 webview 脚本', () => {
-  // tsc 看不见模板字符串内部 JS 的语法错误，这条是唯一的静态守卫
-  it('生成脚本必须可解析（防模板字符串转义破坏整个页面）', () => {
-    expect(() => new vm.Script(script)).not.toThrow();
+describe('renderHtml 宿主 HTML 产出', () => {
+  it('CSP：script-src 保持 nonce+cspSource 严格策略，无 unsafe-inline', () => {
+    const csp = html.match(/content="([^"]*)"/)![1];
+    expect(csp).toContain(`script-src ${CSP} 'nonce-deadbeefcafe0000'`);
+    expect(csp).not.toMatch(/script-src[^;]*unsafe-inline/);
   });
 
-  it('acquireVsCodeApi 在脚本顶部恰好声明一次', () => {
-    expect(script.match(/acquireVsCodeApi\(\)/g)).toHaveLength(1);
-    expect(script.trimStart().startsWith('const vscode = acquireVsCodeApi();')).toBe(true);
+  // Naive UI 的 css-render 在运行时动态插入 <style>，无法预加 nonce，style-src 必须放行 unsafe-inline
+  it('CSP：style-src 含 unsafe-inline（Naive UI css-render 运行时注入所需）', () => {
+    const csp = html.match(/content="([^"]*)"/)![1];
+    expect(csp).toMatch(/style-src[^;]*unsafe-inline/);
   });
 
-  it('路径单元格 title 唯一来源：applyLocale 中转义换行拼接路径与复制提示', () => {
-    expect(script).toMatch(/r\.path \+ '\\n' \+ S\('report\.copyPathHint'\)/);
-    // title 只在 applyLocale 一处赋值（初始渲染即调用），不得再有第二处拼接
-    expect(script.match(/ \+ S\('report\.copyPathHint'\)/g)).toHaveLength(1);
+  it('UI 行为不再内联：bootstrap 内联脚本只注入数据，逻辑全部在打包产物中', () => {
+    const script = inlineScriptSrc();
+    expect(script).toContain('window.__CLEANER__');
+    expect(script).not.toContain('addEventListener');
+    expect(script).not.toContain('acquireVsCodeApi');
+    expect(html).toContain('<script type="module" src="' + ASSETS.scriptUri + '"></script>');
+    expect(html).toContain('<link rel="stylesheet" href="' + ASSETS.styleUri + '">');
   });
 
-  it('tip/desc 可选文案走 Sopt（缺失返回空串），不走 S() 的原始 key 回退', () => {
-    expect(script).toMatch(/Sopt\('tip\./);
-    expect(script).not.toMatch(/S\('tip\.'/);
-    expect(script).not.toMatch(/S\('desc\.'/);
-  });
-
-  it('搜索不得替用户自动勾选行', () => {
-    expect(script).not.toMatch(/r\.cb\.checked = hasQuery/);
+  it('bootstrap 注入数据：< 转义防注入，items/langs/locale 三件套齐全', () => {
+    const script = inlineScriptSrc();
+    // 转义后的路径不含裸 <（防 </script> 逃逸）
+    expect(script).not.toMatch(/<(?!\\u003c)/);
+    expect(script).toContain('"kind":"ipch"');
+    expect(script).toContain('"kind":"cachedVsixs"');
+    expect(script).toContain('"kind":"logs"');
+    expect(script).toContain('"locale":"en"');
+    expect(script).toContain('"section.cachedVsixs"');
   });
 });

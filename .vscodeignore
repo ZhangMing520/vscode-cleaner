@@ -1,0 +1,17 @@
+# 打包 .vsix 时只保留运行必需物：out/**（宿主 JS）与 media/main.*（webview 产物）
+.vscode/**
+.vscode-test/**
+.qoder/**
+src/**
+webview/**
+test/**
+out/**/*.map
+node_modules/**
+media/index.html
+requirements.md
+AGENTS.md
+tsconfig.json
+*.vsix
+.gitignore
+vitest.config.ts
+vite.config.ts

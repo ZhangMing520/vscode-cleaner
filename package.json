@@ -32,15 +32,23 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "npm run compile && npm run webview:build",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
+    "webview:build": "vite build",
+    "webview:watch": "vite build --watch",
+    "webview:typecheck": "vue-tsc --noEmit -p webview",
     "test": "vitest run"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.85.0",
+    "@vitejs/plugin-vue": "^5.2.4",
+    "naive-ui": "^2.45.3",
     "typescript": "^5.4.0",
-    "vitest": "^1.6.1"
+    "vite": "^5.4.21",
+    "vitest": "^1.6.1",
+    "vue": "^3.5.43",
+    "vue-tsc": "^2.2.12"
   }
 }

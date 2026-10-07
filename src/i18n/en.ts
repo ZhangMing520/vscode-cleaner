@@ -19,6 +19,7 @@ export const en: Record<string, string> = {
   'report.confirmMore': '{n} more',
   'report.copyPathHint': 'Click to copy full path',
   'report.copiedPath': 'Path copied to clipboard',
+  'report.bundleMissing': 'webview bundle not found. Run <code>npm run webview:build</code> first.',
   'col.name': 'Name',
   'col.type': 'Type',
   'col.size': 'Size',

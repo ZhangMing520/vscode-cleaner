@@ -78,7 +78,7 @@ export function activate(context: vscode.ExtensionContext): void {
         return;
       }
 
-      showReport(items);
+      showReport(items, context.extensionUri);
     }
   );
 
